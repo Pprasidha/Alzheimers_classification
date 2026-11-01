@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroScan AI | Alzheimer's Disease Stage Classification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --bg-light: #f3f7fb;
+            --card-bg: #111827;
+            --card-border: #1f2937;
+            --surface-soft: #1f2937;
+            --surface-alt: #0f172a;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --text-light: #f3f4f6;
+            --text-dark: #111827;
+            --text-muted: #9ca3af;
+            --text-secondary: #d1d5db;
+            --bg-glass: rgba(17, 24, 39, 0.85);
+            --drop-zone-bg: rgba(31, 41, 55, 0.3);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        body[data-theme="light"] {
+            --bg-dark: var(--bg-light);
+            --card-bg: #ffffff;
+            --card-border: #dfe6ee;
+            --surface-soft: #f2f6fb;
+            --surface-alt: #e7edf7;
+            --text-light: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --bg-glass: rgba(255, 255, 255, 0.86);
+            --drop-zone-bg: rgba(148, 163, 184, 0.12);
+            --shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(6, 182, 212, 0.03) 100%);
+        }
+
+        .navbar-custom {
+            background-color: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+        }
+        .card-custom {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+        .drop-zone {
+            border: 2px dashed var(--card-border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: var(--drop-zone-bg);
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.08);
+        }
+        .scan-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+        }
+        .badge-stage {
+            font-size: 1.05rem;
+            padding: 8px 16px;
+            border-radius: 50rem;
+        }
+        .progress-bar-custom {
+            background-color: var(--surface-soft);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn-gradient:hover {
+            opacity: 0.9;
+            color: white;
+        }
+        .spinner-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 14px;
+            z-index: 10;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body[data-theme="light"] .text-light,
+        body[data-theme="light"] .navbar-brand,
+        body[data-theme="light"] h1,
+        body[data-theme="light"] h5,
+        body[data-theme="light"] h6,
+        body[data-theme="light"] .fw-semibold,
+        body[data-theme="light"] .fw-bold {
+            color: var(--text-light) !important;
+        }
+
+        body[data-theme="light"] .text-muted,
+        body[data-theme="light"] .text-secondary,
+        body[data-theme="light"] p,
+        body[data-theme="light"] .small.text-secondary,
+        body[data-theme="light"] .lead {
+            color: var(--text-secondary) !important;
+        }
+
+        body[data-theme="light"] .bg-dark,
+        body[data-theme="light"] .alert-dark,
+        body[data-theme="light"] .bg-black,
+        body[data-theme="light"] .badge.bg-dark,
+        body[data-theme="light"] .bg-secondary {
+            background-color: var(--surface-soft) !important;
+            color: var(--text-light) !important;
+        }
+
+        body[data-theme="light"] .border-secondary,
+        body[data-theme="light"] .scan-preview,
+        body[data-theme="light"] .drop-zone,
+        body[data-theme="light"] .card-custom {
+            border-color: var(--card-border) !important;
+        }
+
+        body[data-theme="light"] .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(0.2) !important;
+        }
+
+        body[data-theme="light"] .spinner-overlay {
+            background: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="py-4">
+
+    <!-- Top Navigation -->
+    <nav class="navbar navbar-custom fixed-top mb-4">
+        <div class="container d-flex justify-content-between align-items-center gap-3">
+            <a class="navbar-brand text-light fw-bold d-flex align-items-center gap-2" href="#">
+                <i class="fa-solid fa-brain text-info fs-4"></i>
+                <span>NeuroScan<span class="text-info">AI</span></span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i id="themeIcon" class="fa-solid fa-moon me-1"></i>
+                    <span id="themeLabel">Dark</span>
+                </button>
+                <span class="badge bg-dark border border-secondary text-secondary d-none d-sm-inline-flex">
+                    <i class="fa-solid fa-shield-halved me-1 text-success"></i> Deep Learning CADx System
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 pt-4">
+        <!-- Header Section -->
+        <div class="row justify-content-center text-center mb-4">
+            <div class="col-lg-9">
+                <h1 class="fw-bold tracking-tight mb-2">Alzheimer's Disease Stage Classification</h1>
+                <p class="text-muted lead">
+                    Automated multi-class diagnosis from structural brain MRI with <strong>Grad-CAM visual explainability</strong> and attention-guided biomarker identification.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+                    <span class="badge bg-secondary">4 Clinical Stages</span>
+                    <span class="badge bg-secondary">Deep Attention CNN</span>
+                    <span class="badge bg-secondary">Explainable AI (XAI)</span>
+                    <span class="badge bg-secondary">Real-Time Inference</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Scan Upload & Input Controls -->
+            <div class="col-lg-5">
+                <div class="card card-custom h-100 p-4 position-relative">
+                    <h5 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-info"></i>
+                        Upload MRI Scan
+                    </h5>
+                    <p class="text-muted small">Upload an axial T1-weighted brain MRI scan in JPG, PNG, or TIFF format.</p>
+
+                    <form id="uploadForm">
+                        <div class="drop-zone mb-3" id="dropZone">
+                            <i class="fa-solid fa-file-medical fa-3x text-secondary mb-3"></i>
+                            <h6 class="text-light">Drag & Drop MRI image here</h6>
+                            <p class="text-muted small mb-3">or click to browse from your device</p>
+                            <input type="file" id="fileInput" name="file" accept="image/*" class="d-none">
+                            <button type="button" class="btn btn-sm btn-outline-info px-3" onclick="document.getElementById('fileInput').click()">
+                                Choose Image
+                            </button>
+                        </div>
+
+                        <div id="fileInfo" class="d-none alert alert-dark border-secondary p-2 small d-flex justify-content-between align-items-center mb-3">
+                            <span id="fileName" class="text-truncate" style="max-width: 250px;">filename.jpg</span>
+                            <button type="button" class="btn-close btn-close-white" onclick="resetFile()"></button>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-2.5" disabled>
+                            <i class="fa-solid fa-microscope me-2"></i> Run Neural Diagnostic
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <h6 class="text-muted small fw-bold text-uppercase mb-2">Clinical Stages Reference:</h6>
+                        <ul class="list-unstyled small text-secondary mb-0">
+                            <li class="mb-1"><span class="badge bg-success me-2">Normal Control</span> Non-Demented</li>
+                            <li class="mb-1"><span class="badge bg-info me-2">Early Impairment</span> Very Mild Demented</li>
+                            <li class="mb-1"><span class="badge bg-warning text-dark me-2">Mild Impairment</span> Mild Demented</li>
+                            <li class="mb-1"><span class="badge bg-danger me-2">Moderate Impairment</span> Moderate Demented</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results & Explainability -->
+            <div class="col-lg-7">
+                <div class="card card-custom h-100 p-4 position-relative" id="resultsCard">
+                    <!-- Loading Spinner Overlay -->
+                    <div class="spinner-overlay" id="loadingOverlay">
+                        <div class="spinner-border text-info mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                        <h6 class="text-light">Analyzing Neuroimaging Biomarkers...</h6>
+                        <p class="text-muted small">Computing feature maps & Grad-CAM activations</p>
+                    </div>
+
+                    <!-- Placeholder state -->
+                    <div id="emptyState" class="text-center py-5 my-auto">
+                        <i class="fa-solid fa-laptop-medical fa-4x text-secondary mb-3 opacity-50"></i>
+                        <h5 class="text-muted">Awaiting Scan Upload</h5>
+                        <p class="text-secondary small max-w-sm mx-auto">
+                            Upload a patient MRI slice on the left to view stage prediction, probability distribution, and Grad-CAM interpretability overlay.
+                        </p>
+                    </div>
+
+                    <!-- Diagnostics Content (Hidden until prediction) -->
+                    <div id="diagnosticsContent" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-semibold mb-0">Diagnostic Assessment</h5>
+                            <span id="stageBadge" class="badge badge-stage bg-primary">Predicted Stage</span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <!-- Raw Scan -->
+                            <div class="col-6 text-center">
+                                <div class="bg-dark p-2 rounded border border-secondary">
+                                    <span class="badge bg-secondary mb-2 d-inline-block">Original MRI Scan</span>
+                                    <img id="origImg" src="" alt="Original MRI" class="scan-preview">
+                                </div>
+                            </div>
+                            <!-- Grad-CAM Overlay -->
+                            <div class="col-6 text-center">
+                                <div class="bg-dark p-2 rounded border border-secondary">
+                                    <span class="badge bg-danger mb-2 d-inline-block">
+                                        <i class="fa-solid fa-fire me-1"></i> Grad-CAM Attention
+                                    </span>
+                                    <img id="camImg" src="" alt="Grad-CAM Heatmap" class="scan-preview">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stage Probability Distribution -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold small text-uppercase text-muted">Confidence Breakdown</span>
+                                <span id="topConfidence" class="text-info fw-bold">98.5% Confidence</span>
+                            </div>
+                            <div id="probBars" class="d-flex flex-column gap-2">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Clinical Findings Box -->
+                        <div class="alert alert-dark border-secondary p-3 mb-0" id="clinicalNoteBox">
+                            <h6 class="fw-bold text-light mb-1 d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-notes-medical text-info"></i>
+                                <span id="clinicalNoteTitle">Clinical Observations</span>
+                            </h6>
+                            <p class="text-muted small mb-2" id="clinicalDescription"></p>
+                            <div class="p-2 rounded bg-black bg-opacity-25 border border-secondary border-opacity-50">
+                                <small class="text-info fw-semibold">Recommended Follow-up:</small>
+                                <small class="text-secondary d-block" id="clinicalRec"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const emptyState = document.getElementById('emptyState');
+        const diagnosticsContent = document.getElementById('diagnosticsContent');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeLabel = document.getElementById('themeLabel');
+        const themeIcon = document.getElementById('themeIcon');
+
+        let selectedFile = null;
+
+        function applyTheme(theme) {
+            const selectedTheme = theme === 'light' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', selectedTheme);
+            themeLabel.textContent = selectedTheme === 'light' ? 'Light' : 'Dark';
+            themeIcon.className = selectedTheme === 'light' ? 'fa-solid fa-sun me-1' : 'fa-solid fa-moon me-1';
+            localStorage.setItem('neuroscan-theme', selectedTheme);
+        }
+
+        const savedTheme = localStorage.getItem('neuroscan-theme') || 'dark';
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        ['dragleave', 'dragend'].forEach(type => {
+            dropZone.addEventListener(type, () => dropZone.classList.remove('dragover'));
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('d-none');
+            submitBtn.removeAttribute('disabled');
+        }
+
+        function resetFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.add('d-none');
+            submitBtn.setAttribute('disabled', 'true');
+        }
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedFile) return;
+
+            loadingOverlay.style.display = 'flex';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                loadingOverlay.style.display = 'none';
+
+                if (data.status === 'success') {
+                    renderResults(data);
+                } else {
+                    alert('Error: ' + (data.error || 'Diagnostic evaluation failed.'));
+                }
+            } catch (err) {
+                loadingOverlay.style.display = 'none';
+                alert('Request error: ' + err.message);
+            }
+        });
+
+        function renderResults(data) {
+            emptyState.classList.add('d-none');
+            diagnosticsContent.classList.remove('d-none');
+
+            document.getElementById('origImg').src = data.original_image_base64;
+            document.getElementById('camImg').src = data.gradcam_image_base64;
+
+            const badge = document.getElementById('stageBadge');
+            badge.textContent = data.predicted_stage;
+            badge.className = `badge badge-stage bg-${data.clinical_insights.badge || 'info'}`;
+
+            document.getElementById('topConfidence').textContent = `${data.confidence}% Confidence`;
+
+            // Populate probability bars
+            const barsContainer = document.getElementById('probBars');
+            barsContainer.innerHTML = '';
+
+            data.probabilities.forEach(item => {
+                const isWinner = item.stage === data.predicted_stage;
+                const barColor = isWinner ? 'bg-info' : 'bg-secondary';
+                const fw = isWinner ? 'fw-bold text-light' : 'text-muted';
+
+                const row = document.createElement('div');
+                row.innerHTML = `
+                    <div class="d-flex justify-content-between small ${fw} mb-1">
+                        <span>${item.stage}</span>
+                        <span>${item.probability}%</span>
+                    </div>
+                    <div class="progress progress-bar-custom">
+                        <div class="progress-bar ${barColor}" style="width: ${item.probability}%;"></div>
+                    </div>
+                `;
+                barsContainer.appendChild(row);
+            });
+
+            // Populate clinical insights
+            document.getElementById('clinicalNoteTitle').textContent = data.clinical_insights.title || 'Clinical Analysis';
+            document.getElementById('clinicalDescription').textContent = data.clinical_insights.description || '';
+            document.getElementById('clinicalRec').textContent = data.clinical_insights.recommendation || '';
+        }
+    </script>
+</body>
+</html>

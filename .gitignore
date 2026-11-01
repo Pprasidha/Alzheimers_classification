@@ -1,0 +1,27 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Editor settings
+.vscode/
+.idea/
+
+# Generated runtime content
+app/static/uploads/
+models/checkpoints/
+*.pth
+
+# Large local datasets / artifacts (kept local, not pushed to git)
+data/
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
