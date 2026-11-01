@@ -2,22 +2,23 @@
 setlocal
 cd /d "%~dp0"
 
-set PYTHON=C:\Users\ppras\alz_env\Scripts\python.exe
+set "PYTHON=%~dp0.venv\Scripts\python.exe"
 
 if not exist "%PYTHON%" (
-    echo Python virtual environment not found at C:\Users\ppras\alz_env. Using system python...
-    set PYTHON=python
+    echo Local virtual environment not found at %~dp0.venv\Scripts\python.exe.
+    echo Falling back to system python...
+    set "PYTHON=python"
 )
 
 :menu
 cls
 echo ======================================================================
-echo    Alzheimer's Disease Stage Classification & Grad-CAM System
+echo    Alzheimer's Disease Stage Classification ^& Grad-CAM System
 echo ======================================================================
 echo  1. Download Full 6,400 Real Clinical MRI Dataset
 echo  2. Train AlzheimerNet Deep Attention CNN (on real data)
 echo  3. Evaluate Model on Test Set (Accuracy, F1, Confusion Matrix)
-echo  4. Run Single Scan Prediction & Grad-CAM CLI
+echo  4. Run Single Scan Prediction ^& Grad-CAM CLI
 echo  5. Launch NeuroScan Web Application Dashboard
 echo  6. Generate Synthetic MRI Brain Scans (Alternative/Testing)
 echo  7. Exit
